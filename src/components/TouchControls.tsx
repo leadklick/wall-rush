@@ -115,20 +115,6 @@ export function TouchControls() {
       onPointerLeave={onUp}
       onPointerCancel={onUp}
     >
-      {/* Zone tints */}
-      <div style={{ ...s.zone, left: 0, width: '33%', background: 'rgba(0,180,255,0.06)' }} />
-      <div style={{ ...s.zone, left: '33%', width: '34%', background: 'rgba(255,200,0,0.06)' }} />
-      <div style={{ ...s.zone, right: 0, width: '33%', background: 'rgba(0,255,120,0.06)' }} />
-
-      {/* Hint labels at bottom */}
-      <div style={{ ...s.hint, left: '8%' }}>◀</div>
-      <div style={{ ...s.hint, left: '50%', transform: 'translateX(-50%)', fontSize: '18px' }}>⚡ BOOST</div>
-      <div style={{ ...s.hint, right: '8%' }}>▶</div>
-
-      {/* Swipe hints */}
-      <div style={{ ...s.swipeHint, left: '50%', transform: 'translateX(-50%)', top: '38%' }}>↑ Springen</div>
-      <div style={{ ...s.swipeHint, left: '50%', transform: 'translateX(-50%)', top: '46%' }}>↓ Gleiten</div>
-
       {/* Pause button — top right, isolated from gesture area */}
       <div
         style={s.pauseBtn}
