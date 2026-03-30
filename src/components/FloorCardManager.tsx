@@ -44,16 +44,17 @@ function FloorCard({ url, groupRef }: {
       {/* Card image — full road width */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]} renderOrder={2}>
         <planeGeometry args={[9.0, 7.0]} />
-        <meshStandardMaterial
-          map={texture ?? null}
-          color={texture ? '#ffffff' : '#ffdd00'}
-          roughness={0.5}
-          metalness={0.05}
-          transparent={false}
-          polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
-        />
+        {texture ? (
+          <meshBasicMaterial
+            map={texture}
+            side={THREE.DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
+        ) : (
+          <meshBasicMaterial color="#ffdd00" />
+        )}
       </mesh>
     </group>
   )
