@@ -37,18 +37,22 @@ function FloorCard({ url, groupRef }: {
     )
   }, [url])
 
+  // Vertical card — stands upright on the road like a billboard
+  // Card aspect ratio ~1:1.4 (portrait). Size: 5 wide × 7 tall
   return (
     <group ref={groupRef}>
-      {/* Card image — full road width, Y=0.08 safely above platform */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]} renderOrder={2}>
-        <planeGeometry args={[9.0, 7.0]} />
+      {/* Subtle glow behind card */}
+      <mesh position={[0, 3.6, 0.04]}>
+        <planeGeometry args={[5.6, 7.8]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.08} depthWrite={false} />
+      </mesh>
+      {/* The card — vertical, centered at y=3.5 so bottom is at y=0 */}
+      <mesh position={[0, 3.5, 0]}>
+        <planeGeometry args={[5.0, 7.0]} />
         <meshBasicMaterial
           ref={matRef}
           color="#ffaa00"
           side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
         />
       </mesh>
     </group>
@@ -60,7 +64,7 @@ interface CardData { id: number; z: number; urlIndex: number }
 
 const SPAWN_Z   = -46
 const DESPAWN_Z =  18
-const SPACING   =  20
+const CARD_INTERVAL = 8.0   // seconds between cards (~every 2 walls)
 
 export function FloorCardManager() {
   const status = useGameStore((s) => s.status)
@@ -68,7 +72,7 @@ export function FloorCardManager() {
   const cardsRef    = useRef<CardData[]>([])
   const groupRefs   = useRef(new Map<number, THREE.Group>())
   const [render, setRender] = useState<CardData[]>([])
-  const timerRef    = useRef(3.0)
+  const timerRef    = useRef(6.0)
   const nextId      = useRef(0)
   const urlIndex    = useRef(0)
 
@@ -107,7 +111,7 @@ export function FloorCardManager() {
         z:        SPAWN_Z,
         urlIndex: urlIndex.current++ % CARD_URLS.length,
       }]
-      timerRef.current = SPACING / Math.max(speed, 4)
+      timerRef.current = CARD_INTERVAL
       changed = true
     }
 
