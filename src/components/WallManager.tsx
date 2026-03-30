@@ -58,6 +58,24 @@ function WallCard({ url, gap }: { url: string; gap: Gap }) {
   )
 }
 
+// ─── Brick mortar strips for a wall segment ───────────────────────────────────
+function BrickStrips({ w, h, d }: { w: number; h: number; d: number }) {
+  const count = Math.min(6, Math.max(2, Math.floor(h / 0.32)))
+  return (
+    <>
+      {Array.from({ length: count - 1 }, (_, i) => {
+        const y = ((i + 1) / count) * h - h / 2
+        return (
+          <mesh key={i} position={[0, y, d / 2 + 0.012]}>
+            <boxGeometry args={[w + 0.01, 0.055, 0.04]} />
+            <meshStandardMaterial color="#d4c0a8" roughness={0.95} />
+          </mesh>
+        )
+      })}
+    </>
+  )
+}
+
 // ─── Wall mesh ────────────────────────────────────────────────────────────────
 interface WallMeshProps {
   gaps:          Gap[]
@@ -66,10 +84,11 @@ interface WallMeshProps {
   wallColor:     string
   wallEmissive:  string
   accentColor:   string
+  brickStyle:    boolean
 }
 
 export const WallMesh = forwardRef<THREE.Group, WallMeshProps>(
-  ({ gaps, requiresSlide, cardUrl, wallColor, wallEmissive, accentColor }, ref) => {
+  ({ gaps, requiresSlide, cardUrl, wallColor, wallEmissive, accentColor, brickStyle }, ref) => {
     const gap = gaps[0]
 
     const segs: Array<{ pos: [number, number, number]; size: [number, number, number] }> = []
@@ -106,16 +125,19 @@ export const WallMesh = forwardRef<THREE.Group, WallMeshProps>(
       <group ref={ref}>
         {/* Wall segments */}
         {segs.map((s, i) => (
-          <mesh key={i} position={s.pos} castShadow receiveShadow>
-            <boxGeometry args={s.size} />
-            <meshStandardMaterial
-              color={wallColor}
-              emissive={wallEmissive}
-              emissiveIntensity={0.35}
-              metalness={0.25}
-              roughness={0.72}
-            />
-          </mesh>
+          <group key={i} position={s.pos}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={s.size} />
+              <meshStandardMaterial
+                color={brickStyle ? '#b84030' : wallColor}
+                emissive={brickStyle ? '#5a1a08' : wallEmissive}
+                emissiveIntensity={0.2}
+                metalness={brickStyle ? 0.0 : 0.25}
+                roughness={brickStyle ? 0.95 : 0.72}
+              />
+            </mesh>
+            {brickStyle && <BrickStrips w={s.size[0]} h={s.size[1]} d={s.size[2]} />}
+          </group>
         ))}
 
         {/* Gap opening — bright tinted highlight */}
@@ -301,6 +323,7 @@ export function WallManager({ posRef }: WallManagerProps) {
           wallColor={theme.wallColor}
           wallEmissive={theme.wallEmissive}
           accentColor={theme.accentColor}
+          brickStyle={world === 1}
           ref={(el: THREE.Group | null) => {
             el ? groupRefs.current.set(wall.id, el) : groupRefs.current.delete(wall.id)
           }}

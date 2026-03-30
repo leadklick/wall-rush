@@ -1,4 +1,4 @@
-// ─── Large floor cards between walls ──────────────────────────────────────────
+// ─── Street poster billboards on the road sides ───────────────────────────────
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -15,43 +15,48 @@ const CARD_URLS = [
   '/walls/card-62.png',
 ]
 
-// ─── Single floor card ────────────────────────────────────────────────────────
-function FloorCard({ url, groupRef }: {
-  url: string
+// ─── Single poster on a pole ──────────────────────────────────────────────────
+function StreetPoster({ url, side, groupRef }: {
+  url:      string
+  side:     -1 | 1   // -1 = left, +1 = right
   groupRef: (el: THREE.Group | null) => void
 }) {
   const matRef = useRef<THREE.MeshBasicMaterial>(null!)
 
   useEffect(() => {
     const loader = new THREE.TextureLoader()
-    loader.load(
-      url,
-      (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace
-        if (matRef.current) {
-          matRef.current.map   = tex
-          matRef.current.color.set('#ffffff')
-          matRef.current.needsUpdate = true
-        }
-      },
-    )
+    loader.load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      if (matRef.current) {
+        matRef.current.map = tex
+        matRef.current.color.set('#ffffff')
+        matRef.current.needsUpdate = true
+      }
+    })
   }, [url])
 
-  // Vertical card — stands upright on the road like a billboard
-  // Card aspect ratio ~1:1.4 (portrait). Size: 5 wide × 7 tall
+  const poleX = side * 7.8   // just off the sidewalk
+  const boardW = 2.4
+  const boardH = 3.4
+
   return (
     <group ref={groupRef}>
-      {/* Subtle glow behind card */}
-      <mesh position={[0, 3.6, 0.04]}>
-        <planeGeometry args={[5.6, 7.8]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.08} depthWrite={false} />
+      {/* Pole */}
+      <mesh position={[poleX, 1.8, 0]}>
+        <cylinderGeometry args={[0.06, 0.08, 3.6, 8]} />
+        <meshStandardMaterial color="#555555" roughness={0.5} metalness={0.6} />
       </mesh>
-      {/* The card — vertical, centered at y=3.5 so bottom is at y=0 */}
-      <mesh position={[0, 3.5, 0]}>
-        <planeGeometry args={[5.0, 7.0]} />
+      {/* Wooden board backing */}
+      <mesh position={[poleX, 3.8, 0]}>
+        <boxGeometry args={[boardW + 0.14, boardH + 0.14, 0.10]} />
+        <meshStandardMaterial color="#5a3a18" roughness={0.9} />
+      </mesh>
+      {/* Poster face (toward player — faces +Z) */}
+      <mesh position={[poleX, 3.8, 0.06]}>
+        <planeGeometry args={[boardW, boardH]} />
         <meshBasicMaterial
           ref={matRef}
-          color="#ffaa00"
+          color="#ddaa44"
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -60,29 +65,31 @@ function FloorCard({ url, groupRef }: {
 }
 
 // ─── Manager ──────────────────────────────────────────────────────────────────
-interface CardData { id: number; z: number; urlIndex: number }
+interface PosterData { id: number; z: number; urlIndex: number; side: -1 | 1 }
 
-const SPAWN_Z   = -46
-const DESPAWN_Z =  18
-const CARD_INTERVAL = 8.0   // seconds between cards (~every 2 walls)
+const SPAWN_Z        = -46
+const DESPAWN_Z      =  20
+const POSTER_INTERVAL = 9.0   // seconds — roughly every 2 walls
 
 export function FloorCardManager() {
   const status = useGameStore((s) => s.status)
 
-  const cardsRef    = useRef<CardData[]>([])
+  const postersRef  = useRef<PosterData[]>([])
   const groupRefs   = useRef(new Map<number, THREE.Group>())
-  const [render, setRender] = useState<CardData[]>([])
-  const timerRef    = useRef(6.0)
+  const [render, setRender] = useState<PosterData[]>([])
+  const timerRef    = useRef(5.0)
   const nextId      = useRef(0)
   const urlIndex    = useRef(0)
+  const sideIndex   = useRef(0)
 
   useEffect(() => {
     if (status === 'playing') {
-      cardsRef.current = []
+      postersRef.current = []
       groupRefs.current.clear()
-      timerRef.current = 3.0
-      nextId.current   = 0
-      urlIndex.current = 0
+      timerRef.current  = 5.0
+      nextId.current    = 0
+      urlIndex.current  = 0
+      sideIndex.current = 0
       setRender([])
     }
   }, [status])
@@ -92,39 +99,43 @@ export function FloorCardManager() {
     const speed = getEffectiveSpeed(useGameStore.getState().score)
     let changed = false
 
-    for (const c of cardsRef.current) {
-      c.z += speed * delta
-      groupRefs.current.get(c.id)?.position.setZ(c.z)
+    for (const p of postersRef.current) {
+      p.z += speed * delta
+      groupRefs.current.get(p.id)?.position.setZ(p.z)
     }
 
-    const before = cardsRef.current.length
-    cardsRef.current = cardsRef.current.filter((c) => {
-      if (c.z > DESPAWN_Z) { groupRefs.current.delete(c.id); return false }
+    const before = postersRef.current.length
+    postersRef.current = postersRef.current.filter((p) => {
+      if (p.z > DESPAWN_Z) { groupRefs.current.delete(p.id); return false }
       return true
     })
-    if (cardsRef.current.length !== before) changed = true
+    if (postersRef.current.length !== before) changed = true
 
     timerRef.current -= delta
     if (timerRef.current <= 0) {
-      cardsRef.current = [...cardsRef.current, {
+      const side = sideIndex.current % 2 === 0 ? -1 : 1 as -1 | 1
+      postersRef.current = [...postersRef.current, {
         id:       nextId.current++,
         z:        SPAWN_Z,
         urlIndex: urlIndex.current++ % CARD_URLS.length,
+        side,
       }]
-      timerRef.current = CARD_INTERVAL
+      sideIndex.current++
+      timerRef.current = POSTER_INTERVAL
       changed = true
     }
 
-    if (changed) setRender([...cardsRef.current])
+    if (changed) setRender([...postersRef.current])
   })
 
   return (
     <>
-      {render.map((card) => (
-        <FloorCard
-          key={card.id}
-          url={CARD_URLS[card.urlIndex]}
-          groupRef={(el) => { el ? groupRefs.current.set(card.id, el) : groupRefs.current.delete(card.id) }}
+      {render.map((p) => (
+        <StreetPoster
+          key={p.id}
+          url={CARD_URLS[p.urlIndex]}
+          side={p.side}
+          groupRef={(el) => { el ? groupRefs.current.set(p.id, el) : groupRefs.current.delete(p.id) }}
         />
       ))}
     </>
