@@ -108,14 +108,64 @@ function VolcanoPost({ x }: { x: number }) {
   )
 }
 
+// ─── Brick wall (World 1 only) ────────────────────────────────────────────────
+function CityBrickWall({ x }: { x: number }) {
+  const wallW = DECO_SPACING - 1.2   // fills gap between lamp posts
+  const rows  = 5
+  const rowH  = 0.28
+  const wallH = rows * rowH
+  const brickColor  = '#c04428'
+  const mortarColor = '#d4c0aa'
+  const capColor    = '#b8a898'
+
+  return (
+    <group position={[x, 0, 0]}>
+      {/* Main body */}
+      <mesh position={[0, wallH / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[wallW, wallH, 0.32]} />
+        <meshStandardMaterial color={brickColor} roughness={0.92} />
+      </mesh>
+      {/* Horizontal mortar lines */}
+      {Array.from({ length: rows - 1 }, (_, i) => (
+        <mesh key={`h${i}`} position={[0, (i + 1) * rowH, 0.17]}>
+          <boxGeometry args={[wallW, 0.035, 0.04]} />
+          <meshStandardMaterial color={mortarColor} roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Vertical mortar lines (alternating per row) */}
+      {Array.from({ length: rows }, (_, row) =>
+        [-wallW / 4, wallW / 4].map((bx, col) => {
+          const offset = row % 2 === 0 ? 0 : wallW / 4
+          return (
+            <mesh key={`v${row}-${col}`} position={[bx + offset - wallW / 4, row * rowH + rowH / 2, 0.17]}>
+              <boxGeometry args={[0.035, rowH, 0.04]} />
+              <meshStandardMaterial color={mortarColor} roughness={0.95} />
+            </mesh>
+          )
+        })
+      )}
+      {/* Cap stone */}
+      <mesh position={[0, wallH + 0.06, 0]}>
+        <boxGeometry args={[wallW + 0.08, 0.12, 0.42]} />
+        <meshStandardMaterial color={capColor} roughness={0.82} />
+      </mesh>
+    </group>
+  )
+}
+
 const DecoPair = forwardRef<THREE.Group, { world: number }>((props, ref) => (
   <group ref={ref}>
-    {([-6.5, 6.5] as const).map((x) => (
+    {([-7.2, 7.2] as const).map((x) => (
       <group key={x}>
-        {props.world === 1 && <CityPost x={x} />}
-        {props.world === 2 && <ForestPost x={x} />}
-        {props.world === 3 && <IcePost x={x} />}
-        {props.world === 4 && <VolcanoPost x={x} />}
+        {props.world === 1 && (
+          <>
+            <CityPost x={x < 0 ? -6.5 : 6.5} />
+            <CityBrickWall x={x} />
+          </>
+        )}
+        {props.world === 2 && <ForestPost x={x < 0 ? -6.5 : 6.5} />}
+        {props.world === 3 && <IcePost x={x < 0 ? -6.5 : 6.5} />}
+        {props.world === 4 && <VolcanoPost x={x < 0 ? -6.5 : 6.5} />}
       </group>
     ))}
   </group>
