@@ -17,10 +17,16 @@ const WALL_HEIGHT    = 5
 const PLATFORM_HALF  = 5
 const WALL_THICKNESS = 0.45
 
-// ─── Card images from caeschu.ch ─────────────────────────────────────────────
-const CARD_URLS = Array.from({ length: 7 }, (_, i) =>
-  `https://caeschu.ch/cards/card-${String(i + 1).padStart(2, '0')}.png`,
-)
+// ─── Card images from /public/walls ──────────────────────────────────────────
+const CARD_URLS = [
+  '/walls/card-01.png',
+  '/walls/card-02.png',
+  '/walls/card-10.png',
+  '/walls/card-35.png',
+  '/walls/card-50.png',
+  '/walls/card-55.png',
+  '/walls/card-62.png',
+]
 
 function pickCardUrl(): string | null {
   if (Math.random() > 0.55) return null
