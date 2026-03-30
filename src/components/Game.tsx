@@ -11,6 +11,7 @@ import { Particles } from './Particles'
 import { PostProcessing } from './PostProcessing'
 import { ObstacleManager } from './ObstacleManager'
 import { CoinManager } from './CoinManager'
+import { FloorCardManager } from './FloorCardManager'
 import { TouchControls } from './TouchControls'
 import { useGameStore } from '../store/gameStore'
 import { getLevel, getWorldSpeed } from '../utils/difficulty'
@@ -113,6 +114,7 @@ function Scene() {
       <PlatformTiles />
       <SpeedLines />
       <Particles />
+      <FloorCardManager />
       <CoinManager posRef={posRef} />
       <Player posRef={posRef} />
       <WallManager posRef={posRef} />

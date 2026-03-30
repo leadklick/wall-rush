@@ -29,8 +29,7 @@ const CARD_URLS = [
 ]
 
 function pickCardUrl(): string | null {
-  if (Math.random() > 0.55) return null
-  return CARD_URLS[Math.floor(Math.random() * CARD_URLS.length)]
+  return null  // cards are now shown on the floor
 }
 
 function WallCard({ url, gap }: { url: string; gap: Gap }) {
