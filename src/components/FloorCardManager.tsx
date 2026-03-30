@@ -20,41 +20,36 @@ function FloorCard({ url, groupRef }: {
   url: string
   groupRef: (el: THREE.Group | null) => void
 }) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const matRef = useRef<THREE.MeshBasicMaterial>(null!)
 
   useEffect(() => {
-    let cancelled = false
     const loader = new THREE.TextureLoader()
-    loader.load(url, (tex) => {
-      if (cancelled) return
-      tex.colorSpace = THREE.SRGBColorSpace
-      setTexture(tex)
-    })
-    return () => { cancelled = true }
+    loader.load(
+      url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace
+        if (matRef.current) {
+          matRef.current.map   = tex
+          matRef.current.color.set('#ffffff')
+          matRef.current.needsUpdate = true
+        }
+      },
+    )
   }, [url])
 
-  // Y=0.08 — clearly above platform top (~0.012), no z-fighting
   return (
     <group ref={groupRef}>
-      {/* White border glow */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} renderOrder={1}>
-        <planeGeometry args={[9.4, 7.4]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.18} depthWrite={false} />
-      </mesh>
-      {/* Card image — full road width */}
+      {/* Card image — full road width, Y=0.08 safely above platform */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]} renderOrder={2}>
         <planeGeometry args={[9.0, 7.0]} />
-        {texture ? (
-          <meshBasicMaterial
-            map={texture}
-            side={THREE.DoubleSide}
-            polygonOffset
-            polygonOffsetFactor={-2}
-            polygonOffsetUnits={-2}
-          />
-        ) : (
-          <meshBasicMaterial color="#ffdd00" />
-        )}
+        <meshBasicMaterial
+          ref={matRef}
+          color="#ffaa00"
+          side={THREE.DoubleSide}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+        />
       </mesh>
     </group>
   )
