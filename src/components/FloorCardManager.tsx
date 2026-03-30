@@ -15,40 +15,34 @@ const CARD_URLS = [
   '/walls/card-62.png',
 ]
 
-// Pre-load all textures once
-const textureCache = new Map<string, THREE.Texture>()
-function getTexture(url: string): THREE.Texture | null {
-  if (textureCache.has(url)) return textureCache.get(url)!
-  const loader = new THREE.TextureLoader()
-  loader.load(url, (tex) => {
-    tex.colorSpace = THREE.SRGBColorSpace
-    textureCache.set(url, tex)
-  })
-  return null
-}
-
 // ─── Single floor card mesh ────────────────────────────────────────────────────
 function FloorCard({ url, groupRef }: { url: string; groupRef: React.RefCallback<THREE.Group> }) {
-  const texture = getTexture(url)
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+
+  useEffect(() => {
+    const loader = new THREE.TextureLoader()
+    loader.load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      setTexture(tex)
+    })
+  }, [url])
+
+  const Y = 0.02  // just above platform surface (platform top ≈ 0)
+
   return (
     <group ref={groupRef}>
-      {/* Slight glow halo under the card */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.990, 0]}>
+      {/* Glow halo */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, Y - 0.005, 0]}>
         <planeGeometry args={[9.6, 7.6]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.06} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.07} />
       </mesh>
-      {/* The card image */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.985, 0]}>
+      {/* Card image */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, Y, 0]}>
         <planeGeometry args={[9.0, 7.0]} />
         {texture
-          ? <meshStandardMaterial map={texture} transparent alphaTest={0.04} roughness={0.6} metalness={0.1} />
-          : <meshStandardMaterial color="#333333" transparent opacity={0.3} />
+          ? <meshStandardMaterial map={texture} transparent alphaTest={0.04} roughness={0.55} metalness={0.1} />
+          : <meshStandardMaterial color="#222222" transparent opacity={0.25} />
         }
-      </mesh>
-      {/* Thin border frame */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.983, 0]}>
-        <planeGeometry args={[9.1, 7.1]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.12} wireframe />
       </mesh>
     </group>
   )
@@ -73,10 +67,6 @@ export function FloorCardManager() {
   const nextId     = useRef(0)
   const urlIndexRef = useRef(0)
 
-  // Pre-load all textures at startup
-  useEffect(() => {
-    CARD_URLS.forEach(getTexture)
-  }, [])
 
   useEffect(() => {
     if (status === 'playing') {
